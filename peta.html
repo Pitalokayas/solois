@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Peta SiOSS</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+<style>
+#map{height:95vh}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="js/spreadsheet.js"></script>
+
+<script>
+const map=L.map('map').setView([-7.7162,110.3556],11);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+loadData().then(data=>{
+
+data.forEach(d=>{
+
+let c=d["Titik Koordinat Sekolah"];
+if(!c)return;
+
+let [lat,lng]=c.split(",");
+
+L.marker([lat,lng]).addTo(map)
+.bindPopup(`<b>${d["Nama Sekolah"]}</b><br>${d["Kapanewon"]}<br>ZoSS:${d["Apakah lokasi sudah memiliki ZoSS?"]}`);
+
+});
+
+});
+</script>
+
+</body>
+</html>

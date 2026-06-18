@@ -1,0 +1,13 @@
+body{
+font-family:Arial;
+background:#f5f6fa;
+}
+
+.hero{
+background:linear-gradient(120deg,#0d6efd,#0a58ca);
+padding:60px;
+}
+.card{
+border-radius:12px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
