@@ -4,7 +4,7 @@
  */
 
 // Pastikan kutip menggunakan kutip lurus standar komputer
-const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1vRdsw-kqJf1uuvB1Ame5UwemOGitSCmhHGI9r4EpxZOgqXHHEGTbMXFxWT5XE8xzk3MppbC9oa1M0YX/export?format=csv&gid=350880467";
+const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1vRdsw-kqJf1uuvB1Ame5UwemOGitSCmhHGI9r4EpxZOgqXHHEGTbMXFxWT5XE8xzk3MppbC9oa1M0YX/gviz/tq?tqx=out:csv&gid=350880467";
 
 // Penyimpanan Cache Data Global
 let rawDataCache = [];
