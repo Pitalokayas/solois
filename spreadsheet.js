@@ -1,16 +1,14 @@
 /**
- * SPREADSHEET.JS
+ * SPREADSHEET.JS (VERSI DEBUGGING)
  * Modul utama pengambil data, parsing CSV, dan repositori data global.
  */
 
+// Pastikan kutip menggunakan kutip lurus standar komputer
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRdsw-kqJf1uuvB1Ame5UwemOGitSCmhHGI9r4EpxZOgqXHHEGTbMXFxWT5XE8xzk3MppbC9oa1M0YX/pub?gid=350880467&single=true&output=csv";
 
 // Penyimpanan Cache Data Global
 let rawDataCache = [];
 
-/**
- * Fungsi cerdas parsing CSV aman untuk menghindari kerusakan kolom akibat koma di dalam tanda kutip (alamat)
- */
 function parseCSV(text) {
     let lines = [];
     let row = [""];
@@ -43,22 +41,29 @@ function parseCSV(text) {
     return lines;
 }
 
-/**
- * Mengambil data dari Google Spreadsheet dan mengembalikan objek Array terstruktur
- */
 async function fetchSpreadsheetData() {
     if (rawDataCache.length > 0) {
         return rawDataCache;
     }
 
+    console.log("Mulai mencoba mengambil data dari URL:", SPREADSHEET_CSV_URL);
+
     try {
         const response = await fetch(SPREADSHEET_CSV_URL);
-        if (!response.ok) throw new Error("Koneksi gagal saat menghubungi basis data.");
+        console.log("Respon HTTP dari Google Sheets diperoleh. Status:", response.status);
+        
+        if (!response.ok) throw new Error("Koneksi gagal ke server Google Sheets.");
         
         const csvText = await response.text();
-        const parsedLines = parseCSV(csvText);
+        console.log("Data mentah CSV berhasil diunduh. Panjang karakter:", csvText.length);
         
-        if (parsedLines.length < 2) return [];
+        const parsedLines = parseCSV(csvText);
+        console.log("Jumlah baris yang berhasil di-parse:", parsedLines.length);
+        
+        if (parsedLines.length < 2) {
+            console.warn("Peringatan: Baris data spreadsheet kurang dari 2 baris.");
+            return [];
+        }
 
         const formattedData = [];
         for (let i = 1; i < parsedLines.length; i++) {
@@ -81,18 +86,15 @@ async function fetchSpreadsheetData() {
             }
         }
 
+        console.log("Proses format data selesai. Total data objek siap render:", formattedData.length);
         rawDataCache = formattedData;
         return formattedData;
     } catch (error) {
-        console.error("Spreadsheet Fetch Error:", error);
-        alert("Gagal memuat basis data online. Periksa sambungan jaringan internet Anda.");
+        console.error("Terjadi error fatal pada fungsi fetchSpreadsheetData():", error);
         return [];
     }
 }
 
-/**
- * Mereset cache dan memperbarui halaman secara paksa
- */
 function refreshSpreadsheetData() {
     rawDataCache = [];
     window.location.reload();
