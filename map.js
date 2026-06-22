@@ -1,111 +1,105 @@
+/**
+ * MAP.JS
+ * Kontrol pemetaan geografis spasial menggunakan Leaflet JS dengan sistem filter dinamis.
+ */
+
 let map;
-let markersLayer;
-let allSchoolData = [];
+let markerLayerGroup;
+let allMapData = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  initMap();
+    if (!document.getElementById("map")) return;
 
-  try {
-    const data = await fetchSpreadsheetData();
-    allSchoolData = data.filter((item) => parseCoordinate(item.titikKoordinat));
+    // Inisialisasi awal koordinat tengah Sleman (peta utama)
+    map = L.map('map').setView([-7.7150, 110.3550], 11);
 
-    populateFilters(allSchoolData);
-    renderMarkers(allSchoolData);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    const loading = document.getElementById("mapLoading");
-    if (loading) loading.style.display = "none";
+    markerLayerGroup = L.layerGroup().addTo(map);
 
-    document.getElementById("filterJenjang").addEventListener("change", applyFilters);
-    document.getElementById("filterKapanewon").addEventListener("change", applyFilters);
-    document.getElementById("filterZoSS").addEventListener("change", applyFilters);
-  } catch (error) {
-    console.error(error);
-    const loading = document.getElementById("mapLoading");
-    if (loading) {
-      loading.innerHTML = `<div class="alert alert-danger mb-0">Gagal memuat data peta dari spreadsheet.</div>`;
-    }
-  }
+    // Ambil data dan letakkan marker di peta
+    allMapData = await fetchSpreadsheetData();
+    renderMarkers(allMapData);
+
+    // Filter Trigger Listener
+    document.getElementById("filter-zoss").addEventListener("change", applyMapFilters);
+    document.getElementById("filter-marka").addEventListener("change", applyMapFilters);
 });
 
-function initMap() {
-  map = L.map("map").setView([-7.75, 110.37], 11);
+/**
+ * Pengubah teks string koordinat menjadi array float lintang bujur [lat, lng]
+ */
+function parseLatLng(koordinatStr) {
+    if (!koordinatStr) return null;
+    const parts = koordinatStr.split(',');
+    if (parts.length !== 2) return null;
 
-  L.tileLayer("[{s}.tile.openstreetmap.org](https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png)", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
+    const lat = parseFloat(parts[0].trim());
+    const lng = parseFloat(parts[1].trim());
 
-  markersLayer = L.layerGroup().addTo(map);
+    if (isNaN(lat) || isNaN(lng)) return null;
+    return [lat, lng];
 }
 
-function populateFilters(data) {
-  const jenjangSet = [...new Set(data.map((item) => item.jenjangSekolah).filter(Boolean))].sort();
-  const kapanewonSet = [...new Set(data.map((item) => item.kapanewon).filter(Boolean))].sort();
+function renderMarkers(dataList) {
+    markerLayerGroup.clearLayers();
 
-  const filterJenjang = document.getElementById("filterJenjang");
-  const filterKapanewon = document.getElementById("filterKapanewon");
+    dataList.forEach(item => {
+        const coords = parseLatLng(item.koordinat);
+        if (!coords) return; 
 
-  jenjangSet.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item;
-    option.textContent = item;
-    filterJenjang.appendChild(option);
-  });
+        // Pewarnaan dinamis penanda (Hijau jika ada ZoSS, Merah jika Belum)
+        const isSudah = item.status_zoss.toLowerCase().includes("sudah");
+        const markerColor = isSudah ? "#198754" : "#dc3545";
 
-  kapanewonSet.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item;
-    option.textContent = item;
-    filterKapanewon.appendChild(option);
-  });
+        const marker = L.circleMarker(coords, {
+            radius: 8,
+            fillColor: markerColor,
+            color: "#ffffff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+
+        // Struktur HTML Balon Balas Informasi (Popup Card)
+        const popupContent = `
+            <div style="font-family: sans-serif; min-width: 200px;">
+                <h6 style="margin: 0 0 8px 0; font-weight: bold; color: #1e3c72;">${item.nama_sekolah}</h6>
+                <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                    <tr><td style="color:#666; padding: 2px 0;">Kapanewon:</td><td class="leaflet-popup-content-value">${item.kapanewon}</td></tr>
+                    <tr><td style="color:#666; padding: 2px 0;">Status ZoSS:</td><td class="leaflet-popup-content-value">${item.status_zoss}</td></tr>
+                    <tr><td style="color:#666; padding: 2px 0;">Thn Pasang:</td><td class="leaflet-popup-content-value">${item.tahun_pasang}</td></tr>
+                    <tr><td style="color:#666; padding: 2px 0;">Kondisi Marka:</td><td class="leaflet-popup-content-value">${item.kondisi_marka}</td></tr>
+                    <tr><td style="color:#666; padding: 2px 0;">Status Jalan:</td><td class="leaflet-popup-content-value">${item.status_jalan}</td></tr>
+                </table>
+                <p style="margin: 8px 0 0 0; font-size: 11px; color:#888; font-style: italic;">${item.alamat}</p>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markerLayerGroup.addLayer(marker);
+    });
 }
 
-function renderMarkers(data) {
-  markersLayer.clearLayers();
+function applyMapFilters() {
+    const filterZoss = document.getElementById("filter-zoss").value;
+    const filterMarka = document.getElementById("filter-marka").value;
 
-  const bounds = [];
+    const filtered = allMapData.filter(item => {
+        let matchZoss = true;
+        let matchMarka = true;
 
-  data.forEach((item) => {
-    const coord = parseCoordinate(item.titikKoordinat);
-    if (!coord) return;
+        if (filterZoss !== "all") {
+            matchZoss = item.status_zoss.toLowerCase().includes(filterZoss.toLowerCase());
+        }
+        if (filterMarka !== "all") {
+            matchMarka = item.kondisi_marka.toLowerCase() === filterMarka.toLowerCase();
+        }
 
-    const marker = L.marker([coord.lat, coord.lng]).bindPopup(`
-      <div>
-        <h6 class="fw-bold mb-2">${item.namaSekolah}</h6>
-        <div><strong>Jenjang:</strong> ${item.jenjangSekolah || "-"}</div>
-        <div><strong>Alamat:</strong> ${item.alamatSekolah || "-"}</div>
-        <div><strong>Kapanewon:</strong> ${item.kapanewon || "-"}</div>
-        <div><strong>Status ZoSS:</strong> ${item.statusZoSS || "-"}</div>
-        <div><strong>Tahun:</strong> ${item.tahunPemasangan || "-"}</div>
-      </div>
-    `);
+        return matchZoss && matchMarka;
+    });
 
-    marker.addTo(markersLayer);
-    bounds.push([coord.lat, coord.lng]);
-  });
-
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [30, 30] });
-  }
-}
-
-function applyFilters() {
-  const jenjang = document.getElementById("filterJenjang").value;
-  const kapanewon = document.getElementById("filterKapanewon").value;
-  const zoss = document.getElementById("filterZoSS").value;
-
-  const filtered = allSchoolData.filter((item) => {
-    const matchJenjang = !jenjang || item.jenjangSekolah === jenjang;
-    const matchKapanewon = !kapanewon || item.kapanewon === kapanewon;
-    const matchZoSS = !zoss || normalizeZoSS(item.statusZoSS) === zoss;
-    return matchJenjang && matchKapanewon && matchZoSS;
-  });
-
-  renderMarkers(filtered);
-}
-
-function normalizeZoSS(value) {
-  const text = (value || "").toString().trim().toLowerCase();
-  if (text === "ya") return "Ya";
-  if (text === "tidak") return "Tidak";
-  return value || "";
+    renderMarkers(filtered);
 }
