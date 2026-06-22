@@ -124,7 +124,7 @@
                 const formattedData = [];
                 for (let i = 1; i < parsedLines.length; i++) {
                     const row = parsedLines[i];
-                    if (row.length < 8) continue; 
+                    if (row.length < 2) continue; 
                     formattedData.push({
                         nama_sekolah: row[0] ? row[0].trim() : "",
                         alamat: row[1] ? row[1].trim() : "",
