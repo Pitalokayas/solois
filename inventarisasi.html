@@ -7,7 +7,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .tracking-wide { letter-spacing: 1px; }
+        table.dataTable thead th { font-weight: 600; font-size: 14px; }
+        table.dataTable tbody td { font-size: 14px; vertical-align: middle; }
+    </style>
 </head>
 <body>
 
@@ -42,7 +53,7 @@
                 <p class="text-muted mb-0">Seluruh data sekolah dan status Zona Selamat Sekolah yang disinkronkan langsung dari basis data.</p>
             </div>
             <div>
-                <button class="btn btn-outline-secondary btn-sm" onclick="refreshSpreadsheetData()"><i class="fa-solid fa-sync me-1"></i> Refresh Data</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.location.reload()"><i class="fa-solid fa-sync me-1"></i> Refresh Data</button>
             </div>
         </div>
 
@@ -83,12 +94,98 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
     
-    <script src="js/spreadsheet.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1vRdsw-kqJf1uuvB1Ame5UwemOGitSCmhHGI9r4EpxZOgqXHHEGTbMXFxWT5XE8xzk3MppbC9oa1M0YX/gviz/tq?tqx=out:csv&gid=350880467";
+
+        function parseCSV(text) {
+            let lines = []; let row = [""]; let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i]; let next = text[i+1];
+                if (c === '"') { if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } else { inQuotes = !inQuotes; } }
+                else if (c === ',' && !inQuotes) { row.push(''); }
+                else if ((c === '\r' || c === '\n') && !inQuotes) { if (c === '\r' && next === '\n') { i++; } lines.push(row); row = ['']; }
+                else { row[row.length - 1] += c; }
+            }
+            if (row.length > 1 || row[0] !== '') { lines.push(row); }
+            return lines;
+        }
+
+        async function fetchSpreadsheetData() {
+            try {
+                const response = await fetch(SPREADSHEET_CSV_URL);
+                if (!response.ok) throw new Error("Gagal mengambil data.");
+                const csvText = await response.text();
+                const parsedLines = parseCSV(csvText);
+                const formattedData = [];
+                for (let i = 1; i < parsedLines.length; i++) {
+                    const row = parsedLines[i];
+                    if (row.length < 8) continue; 
+                    formattedData.push({
+                        nama_sekolah: row[0] ? row[0].trim() : "",
+                        alamat: row[1] ? row[1].trim() : "",
+                        kapanewon: row[2] ? row[2].trim() : "",
+                        status_zoss: row[4] ? row[4].trim() : "Belum",
+                        tahun_pasang: row[5] ? row[5].trim() : "-",
+                        status_jalan: row[6] ? row[6].trim() : "-",
+                        kondisi_marka: row[7] ? row[7].trim() : "-"
+                    });
+                }
+                return formattedData;
+            } catch (e) {
+                console.error(e);
+                return [];
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const data = await fetchSpreadsheetData();
+            const tbody = document.querySelector("#zossTable tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            
+            if (data.length === 0) {
+                document.getElementById("loading-spinner").classList.add("d-none");
+                document.getElementById("table-container").classList.remove("d-none");
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger fw-bold">Gagal memuat data dari Spreadsheet.</td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                let badgeZoss = item.status_zoss.toLowerCase().includes("sudah") 
+                    ? '<span class="badge bg-success">Sudah</span>' : '<span class="badge bg-danger">Belum</span>';
+                
+                let badgeMarka = `<span class="badge bg-secondary">${item.kondisi_marka}</span>`;
+                if (item.kondisi_marka.toLowerCase() === 'baik') badgeMarka = '<span class="badge bg-success">Baik</span>';
+                if (item.kondisi_marka.toLowerCase() === 'pudar') badgeMarka = '<span class="badge bg-warning text-dark">Pudar</span>';
+                if (item.kondisi_marka.toLowerCase() === 'rusak') badgeMarka = '<span class="badge bg-danger">Rusak</span>';
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td class="fw-bold">${item.nama_sekolah}</td>
+                    <td>${item.alamat}</td>
+                    <td>${item.kapanewon}</td>
+                    <td>${badgeZoss}</td>
+                    <td>${item.tahun_pasang}</td>
+                    <td>${item.status_jalan}</td>
+                    <td>${badgeMarka}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById("loading-spinner").classList.add("d-none");
+            document.getElementById("table-container").classList.remove("d-none");
+            
+            $('#zossTable').DataTable({
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.5/i18n/id.json' },
+                pageLength: 10,
+                responsive: true
+            });
+        });
+    </script>
 </body>
 </html>
