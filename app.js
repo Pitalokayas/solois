@@ -1,117 +1,78 @@
+/**
+ * APP.JS
+ * Logika pengendali dashboard utama dan tabel interaktif DataTables.
+ */
+
 document.addEventListener("DOMContentLoaded", async () => {
-  try {
+    // Ambil data global dari modul spreadsheet
     const data = await fetchSpreadsheetData();
+    
+    // Hitung ringkasan angka jika komponen statistiknya tersedia di halaman
+    calculateGlobalStats(data);
 
-    if (document.getElementById("totalSekolah")) {
-      renderHomepageSummary(data);
+    // Lakukan render DataTables jika sedang membuka halaman inventarisasi
+    if (document.getElementById("zossTable")) {
+        renderInventarisasiTable(data);
     }
-
-    if (document.getElementById("schoolTable")) {
-      renderInventoryTable(data);
-    }
-  } catch (error) {
-    console.error(error);
-    showSimpleError("Terjadi kesalahan saat memuat data spreadsheet.");
-  }
 });
 
-function renderHomepageSummary(data) {
-  const totalSekolah = data.length;
-  const totalZoSS = data.filter((item) => normalizeZoSS(item.statusZoSS) === "Ya").length;
-  const totalKapanewon = new Set(data.map((item) => item.kapanewon).filter(Boolean)).size;
-  const totalJenjang = new Set(data.map((item) => item.jenjangSekolah).filter(Boolean)).size;
+function calculateGlobalStats(data) {
+    const totalSekolah = data.length;
+    const sudahZoss = data.filter(d => d.status_zoss && d.status_zoss.toLowerCase().includes("sudah")).length;
+    const belumZoss = totalSekolah - sudahZoss;
+    const markaBaik = data.filter(d => d.kondisi_marka && d.kondisi_marka.toLowerCase() === "baik").length;
 
-  document.getElementById("totalSekolah").textContent = totalSekolah;
-  document.getElementById("totalZoSS").textContent = totalZoSS;
-  document.getElementById("totalKapanewon").textContent = totalKapanewon;
-  document.getElementById("totalJenjang").textContent = totalJenjang;
+    if (document.getElementById("stat-total")) document.getElementById("stat-total").innerText = totalSekolah;
+    if (document.getElementById("stat-zoss-ada")) document.getElementById("stat-zoss-ada").innerText = sudahZoss;
+    if (document.getElementById("stat-zoss-tidak")) document.getElementById("stat-zoss-tidak").innerText = belumZoss;
+    if (document.getElementById("stat-marka-baik")) document.getElementById("stat-marka-baik").innerText = markaBaik;
 }
 
-function renderInventoryTable(data) {
-  const loading = document.getElementById("tableLoading");
-  if (loading) loading.style.display = "none";
+function renderInventarisasiTable(data) {
+    const spinner = document.getElementById("loading-spinner");
+    const tableContainer = document.getElementById("table-container");
+    const tbody = document.querySelector("#zossTable tbody");
 
-  const rows = data.map((item, index) => [
-    index + 1,
-    item.namaSekolah,
-    item.jenjangSekolah,
-    item.alamatSekolah,
-    item.kapanewon,
-    item.titikKoordinat,
-    renderZoSSBadge(item.statusZoSS),
-    item.tahunPemasangan || "-"
-  ]);
+    tbody.innerHTML = "";
 
-  $("#schoolTable").DataTable({
-    data: rows,
-    destroy: true,
-    responsive: true,
-    dom: "Bfrtip",
-    buttons: [
-      {
-        extend: "excelHtml5",
-        title: "Data Inventarisasi SiOSS"
-      },
-      {
-        extend: "csvHtml5",
-        title: "Data Inventarisasi SiOSS"
-      },
-      {
-        extend: "print",
-        title: "Data Inventarisasi SiOSS"
-      }
-    ],
-    columnDefs: [
-      { targets: [0], className: "text-center" },
-      { targets: [6], className: "text-center" }
-    ],
-    language: {
-      search: "Cari:",
-      lengthMenu: "Tampilkan _MENU_ data",
-      info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-      infoEmpty: "Tidak ada data",
-      zeroRecords: "Data tidak ditemukan",
-      paginate: {
-        first: "Awal",
-        last: "Akhir",
-        next: "Berikutnya",
-        previous: "Sebelumnya"
-      },
-      buttons: {
-        copy: "Salin",
-        csv: "CSV",
-        excel: "Excel",
-        print: "Cetak"
-      }
-    }
-  });
+    data.forEach(item => {
+        // Pembuatan badge warna estetis untuk status ZoSS
+        let badgeZoss = item.status_zoss.toLowerCase().includes("sudah") 
+            ? '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Sudah</span>'
+            : '<span class="badge bg-danger"><i class="fa-solid fa-times-circle me-1"></i>Belum</span>';
+
+        // Pembuatan badge warna estetis untuk kondisi fisik marka
+        let badgeMarka = '<span class="badge bg-secondary">-</span>';
+        if (item.kondisi_marka.toLowerCase() === "baik") {
+            badgeMarka = '<span class="badge bg-success"><i class="fa-solid fa-square-check me-1"></i>Baik</span>';
+        } else if (item.kondisi_marka.toLowerCase() === "pudar") {
+            badgeMarka = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1"></i>Pudar</span>';
+        } else if (item.kondisi_marka.toLowerCase() === "rusak") {
+            badgeMarka = '<span class="badge bg-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>Rusak</span>';
+        }
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="fw-bold">${item.nama_sekolah}</td>
+            <td>${item.alamat}</td>
+            <td>${item.kapanewon}</td>
+            <td>${badgeZoss}</td>
+            <td>${item.tahun_pasang}</td>
+            <td>${item.status_jalan}</td>
+            <td>${badgeMarka}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    if (spinner) spinner.classList.add("d-none");
+    if (tableContainer) tableContainer.classList.remove("d-none");
+
+    // Inisialisasi DataTables JQuery dengan Bahasa Indonesia resmi
+    $('#zossTable').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.5/i18n/id.json'
+        },
+        pageLength: 10,
+        responsive: true
+    });
 }
-
-function normalizeZoSS(value) {
-  const text = (value || "").toString().trim().toLowerCase();
-  if (text === "ya") return "Ya";
-  if (text === "tidak") return "Tidak";
-  return value || "-";
-}
-
-function renderZoSSBadge(status) {
-  const normalized = normalizeZoSS(status);
-  if (normalized === "Ya") {
-    return '<span class="badge badge-zoss-yes">Ya</span>';
-  }
-  if (normalized === "Tidak") {
-    return '<span class="badge badge-zoss-no">Tidak</span>';
-  }
-  return `<span class="badge text-bg-secondary">${normalized}</span>`;
-}
-
-function showSimpleError(message) {
-  const loaders = ["tableLoading", "statsLoading", "mapLoading"];
-  loaders.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.innerHTML = `<div class="alert alert-danger mb-0">${message}</div>`;
-    }
-  });
-}
-
