@@ -1,93 +1,78 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tentang - SiOSS</title>
-
-  <link href="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css)" rel="stylesheet" />
-  <link href="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css)" rel="stylesheet" />
-  <link href="css/style.css" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tentang Aplikasi - SiOSS Sleman</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="index.html">
-        <i class="bi bi-shield-check me-2"></i>SiOSS
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="index.html">Beranda</a></li>
-          <li class="nav-item"><a class="nav-link" href="inventarisasi.html">Inventarisasi</a></li>
-          <li class="nav-item"><a class="nav-link" href="statistik.html">Statistik</a></li>
-          <li class="nav-item"><a class="nav-link" href="peta.html">Peta</a></li>
-          <li class="nav-item"><a class="nav-link active" href="tentang.html">Tentang</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
-  <section class="page-header">
-    <div class="container">
-      <h1 class="fw-bold">Tentang SiOSS</h1>
-      <p class="mb-0">Informasi sistem dan sumber data.</p>
-    </div>
-  </section>
-
-  <section class="py-5">
-    <div class="container">
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body p-4">
-          <h3 class="fw-bold mb-3">Apa itu SiOSS?</h3>
-          <p>
-            SiOSS adalah Sistem Inventarisasi Online Zona Selamat Sekolah yang digunakan untuk
-            menampilkan, mengelola, dan memvisualisasikan data sekolah beserta status implementasi
-            Zona Selamat Sekolah secara online.
-          </p>
-          <p>
-            Website ini dibangun menggunakan teknologi frontend murni agar mudah di-host
-            di GitHub Pages tanpa memerlukan server backend.
-          </p>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <i class="fa-solid fa-road-circle-check me-2 text-warning"></i>
+                <div>
+                    <span class="fw-bold tracking-wide">SiOSS</span>
+                    <small class="d-block text-muted" style="font-size: 10px;">Dinas Perhubungan Sleman</small>
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="inventarisasi.html">Data Inventarisasi</a></li>
+                    <li class="nav-item"><a class="nav-link" href="statistik.html">Statistik & Grafik</a></li>
+                    <li class="nav-item"><a class="nav-link" href="peta.html">Peta Sebaran</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="tentang.html">Tentang Aplikasi</a></li>
+                </ul>
+            </div>
         </div>
-      </div>
+    </nav>
 
-      <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body p-4">
-          <h3 class="fw-bold mb-3">Teknologi yang Digunakan</h3>
-          <ul class="mb-0">
-            <li>HTML5, CSS3, JavaScript</li>
-            <li>Bootstrap 5</li>
-            <li>DataTables</li>
-            <li>Chart.js</li>
-            <li>Leaflet.js</li>
-            <li>Google Spreadsheet CSV sebagai sumber data</li>
-          </ul>
+    <div class="container py-5 mb-5">
+        <div class="row g-5">
+            <div class="col-md-8">
+                <h2 class="fw-bold text-dark mb-3"><i class="fa-solid fa-road-circle-check me-2 text-warning"></i>Tentang Aplikasi SiOSS</h2>
+                <p><strong>SiOSS (Sistem Inventarisasi Online Zona Selamat Sekolah)</strong> merupakan platform digital inovatif yang dirancang khusus oleh Bidang Prasarana Dinas Perhubungan Kabupaten Sleman. Sistem ini mengintegrasikan basis data berbasis cloud (Google Sheets) dengan antarmuka web modern untuk mewujudkan sistem inventarisasi yang transparan, akurat, dan dinamis.</p>
+                
+                <h5 class="fw-bold text-dark mt-4 mb-3">Tujuan Utama</h5>
+                <ul class="text-muted">
+                    <li class="mb-2"><strong>Digitalisasi Inventarisasi:</strong> Mengubah tata kelola pencatatan fasilitas jalan dari format manual/konvensional menjadi sistem basis data digital terpusat.</li>
+                    <li class="mb-2"><strong>Monitoring Kondisi Riil:</strong> Memantau degradasi marka jalan ZoSS secara berkala agar pemeliharaan (pemberian hibah/revitalisasi) dapat dilakukan tepat sasaran.</li>
+                    <li class="mb-2"><strong>Transparansi Data & Pemetaan Spasial:</strong> Menyediakan visualisasi berbasis peta geografis untuk pemangku kepentingan maupun masyarakat luas guna memetakan tingkat keselamatan jalan di area sekolah.</li>
+                </ul>
+
+                <div class="alert alert-info border-0 shadow-sm mt-4" role="alert">
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-lightbulb me-2"></i>Catatan Pengelolaan Fasilitas:</h6>
+                    <small class="d-block">Sesuai peraturan teknis, beberapa fasilitas pelengkap keselamatan jalan seperti cermin tikungan bersifat hibah aset, sedangkan Zona Selamat Sekolah (ZoSS) berada dalam kluster pengawasan ketat perlengkapan jalan demi keselamatan kelompok rentan (anak sekolah).</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-light mb-4 text-center py-4">
+                    <div class="card-body">
+                        <i class="fa-solid fa-building-shield fa-4x text-muted mb-3"></i>
+                        <h5 class="fw-bold text-dark mb-1">Dinas Perhubungan</h5>
+                        <p class="text-muted mb-3">Kabupaten Sleman</p>
+                        <small class="text-muted d-block border-top pt-2">Seksi Prasarana dan Perlengkapan Jalan</small>
+                        <small class="text-muted d-block">Kabupaten Sleman, D.I. Yogyakarta</small>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </div>
 
-      <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-          <h3 class="fw-bold mb-3">Sumber Data</h3>
-          <p class="mb-2">
-            Data diambil dari Google Spreadsheet publik berikut:
-          </p>
-          <a class="btn btn-primary" href="[docs.google.com](https://docs.google.com/spreadsheets/d/e/2PACX-1vRdsw-kqJf1uuvB1Ame5UwemOGitSCmhHGI9r4EpxZOgqXHHEGTbMXFxWT5XE8xzk3MppbC9oa1M0YX/pub?output=csv)" target="_blank">
-            <i class="bi bi-box-arrow-up-right me-2"></i>Buka Spreadsheet
-          </a>
+    <footer class="bg-dark text-white text-center py-3 mt-auto border-top border-secondary">
+        <div class="container">
+            <p class="mb-1" style="font-size: 14px;">&copy; 2026 Dinas Perhubungan Kabupaten Sleman. All Rights Reserved.</p>
+            <small class="text-muted">Sistem Inventarisasi Online Zona Selamat Sekolah (SiOSS)</small>
         </div>
-      </div>
-    </div>
-  </section>
+    </footer>
 
-  <footer class="bg-dark text-white py-4">
-    <div class="container text-center">
-      <small>&copy; 2026 SiOSS</small>
-    </div>
-  </footer>
-
-  <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
