@@ -1,143 +1,104 @@
+/**
+ * STATISTIK.JS
+ * Agregasi data spreadsheet dan rendering komponen grafik Chart.js.
+ */
+
 document.addEventListener("DOMContentLoaded", async () => {
-  try {
+    if (!document.getElementById("chartZossStatus")) return;
+
     const data = await fetchSpreadsheetData();
-    renderStatistics(data);
-  } catch (error) {
-    console.error(error);
-    const loading = document.getElementById("statsLoading");
-    if (loading) {
-      loading.innerHTML = `<div class="alert alert-danger mb-0">Gagal memuat statistik dari spreadsheet.</div>`;
-    }
-  }
+    
+    if (document.getElementById("loading-spinner")) document.getElementById("loading-spinner").classList.add("d-none");
+    if (document.getElementById("charts-container")) document.getElementById("charts-container").classList.remove("d-none");
+
+    renderCharts(data);
 });
 
-function renderStatistics(data) {
-  const totalSekolah = data.length;
-  const jumlahYa = data.filter((item) => normalizeZoSS(item.statusZoSS) === "Ya").length;
-  const jumlahTidak = data.filter((item) => normalizeZoSS(item.statusZoSS) === "Tidak").length;
-  const jumlahKapanewon = new Set(data.map((item) => item.kapanewon).filter(Boolean)).size;
+function renderCharts(data) {
+    // 1. Chart Status Ketersediaan ZoSS (Doughnut)
+    const sudahCount = data.filter(d => d.status_zoss.toLowerCase().includes("sudah")).length;
+    const belumCount = data.length - sudahCount;
 
-  document.getElementById("statTotalSekolah").textContent = totalSekolah;
-  document.getElementById("statZoSSYa").textContent = jumlahYa;
-  document.getElementById("statZoSSTidak").textContent = jumlahTidak;
-  document.getElementById("statKapanewon").textContent = jumlahKapanewon;
-
-  const jenjangData = groupCount(data, "jenjangSekolah");
-  const zossData = groupCount(
-    data.map((item) => ({
-      status: normalizeZoSS(item.statusZoSS)
-    })),
-    "status"
-  );
-  const kapanewonData = groupCount(data, "kapanewon");
-
-  renderPieChart("jenjangChart", Object.keys(jenjangData), Object.values(jenjangData), [
-    "#0d6efd",
-    "#20c997",
-    "#ffc107",
-    "#dc3545",
-    "#6f42c1",
-    "#fd7e14"
-  ]);
-
-  renderDoughnutChart("zossChart", Object.keys(zossData), Object.values(zossData), [
-    "#198754",
-    "#dc3545",
-    "#6c757d"
-  ]);
-
-  const sortedKapanewon = Object.entries(kapanewonData).sort((a, b) => b[1] - a[1]);
-  renderBarChart(
-    "kapanewonChart",
-    sortedKapanewon.map((item) => item[0]),
-    sortedKapanewon.map((item) => item[1])
-  );
-
-  const loading = document.getElementById("statsLoading");
-  if (loading) loading.style.display = "none";
-}
-
-function renderPieChart(canvasId, labels, data, colors) {
-  new Chart(document.getElementById(canvasId), {
-    type: "pie",
-    data: {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: colors
+    new Chart(document.getElementById("chartZossStatus"), {
+        type: 'doughnut',
+        data: {
+            labels: ['Sudah Memiliki ZoSS', 'Belum Memiliki ZoSS'],
+            datasets: [{
+                data: [sudahCount, belumCount],
+                backgroundColor: ['#198754', '#dc3545'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "bottom"
-        }
-      }
-    }
-  });
-}
+    });
 
-function renderDoughnutChart(canvasId, labels, data, colors) {
-  new Chart(document.getElementById(canvasId), {
-    type: "doughnut",
-    data: {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: colors
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "bottom"
-        }
-      }
-    }
-  });
-}
+    // 2. Chart Kondisi Kerusakan Marka (Pie)
+    const mBaik = data.filter(d => d.kondisi_marka.toLowerCase() === "baik").length;
+    const mPudar = data.filter(d => d.kondisi_marka.toLowerCase() === "pudar").length;
+    const mRusak = data.filter(d => d.kondisi_marka.toLowerCase() === "rusak").length;
+    const mTanpa = data.filter(d => d.kondisi_marka.toLowerCase() === "-" || d.kondisi_marka.trim() === "").length;
 
-function renderBarChart(canvasId, labels, data) {
-  new Chart(document.getElementById(canvasId), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Jumlah Sekolah",
-          data,
-          backgroundColor: "#0d6efd"
+    new Chart(document.getElementById("chartKondisiMarka"), {
+        type: 'pie',
+        data: {
+            labels: ['Baik', 'Pudar', 'Rusak', 'Tidak Ada Marka / Data'],
+            datasets: [{
+                data: [mBaik, mPudar, mRusak, mTanpa],
+                backgroundColor: ['#198754', '#ffc107', '#dc3545', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0
-          }
-        }
-      }
-    }
-  });
-}
+    });
 
-function normalizeZoSS(value) {
-  const text = (value || "").toString().trim().toLowerCase();
-  if (text === "ya") return "Ya";
-  if (text === "tidak") return "Tidak";
-  return value || "Tidak diketahui";
+    // 3. Chart Distribusi per Wilayah Kapanewon (Bar)
+    const kapanewonMap = {};
+    data.forEach(d => {
+        const kap = d.kapanewon || "Lainnya";
+        if (!kapanewonMap[kap]) {
+            kapanewonMap[kap] = { sudah: 0, total: 0 };
+        }
+        kapanewonMap[kap].total += 1;
+        if (d.status_zoss.toLowerCase().includes("sudah")) {
+            kapanewonMap[kap].sudah += 1;
+        }
+    });
+
+    const labelKapanewon = Object.keys(kapanewonMap);
+    const dataSudah = labelKapanewon.map(k => kapanewonMap[k].sudah);
+    const dataTotal = labelKapanewon.map(k => kapanewonMap[k].total);
+
+    new Chart(document.getElementById("chartKapanewon"), {
+        type: 'bar',
+        data: {
+            labels: labelKapanewon,
+            datasets: [
+                {
+                    label: 'Sudah Memiliki ZoSS',
+                    data: dataSudah,
+                    backgroundColor: '#198754'
+                },
+                {
+                    label: 'Total Terdata',
+                    data: dataTotal,
+                    backgroundColor: '#0d6efd'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
 }
